@@ -36,6 +36,8 @@ abstract class BaseMultiSelectConditionRule extends BaseConditionRule
         return [
             self::OPERATOR_IN,
             self::OPERATOR_NOT_IN,
+            self::OPERATOR_EMPTY,
+            self::OPERATOR_NOT_EMPTY,
         ];
     }
 
@@ -112,10 +114,19 @@ abstract class BaseMultiSelectConditionRule extends BaseConditionRule
      * Returns the rule’s value, prepped for [[Db::parseParam()]] based on the selected operator.
      *
      * @param callable|null $normalizeValue Method for normalizing a given selected value.
-     * @return array|null
+     * @return array|string|null
      */
-    protected function paramValue(?callable $normalizeValue = null): ?array
+    protected function paramValue(?callable $normalizeValue = null): mixed
     {
+        $emptyRule = match ($this->operator) {
+            self::OPERATOR_EMPTY => ':empty:',
+            self::OPERATOR_NOT_EMPTY => 'not :empty:',
+            default => false,
+        };
+        if ($emptyRule) {
+            return $emptyRule;
+        }
+
         $values = [];
         foreach ($this->_values as $value) {
             if ($normalizeValue !== null) {
@@ -146,10 +157,6 @@ abstract class BaseMultiSelectConditionRule extends BaseConditionRule
      */
     protected function matchValue(array|string|null $value): bool
     {
-        if (!$this->_values) {
-            return true;
-        }
-
         if ($value === '' || $value === null) {
             $value = [];
         } else {
@@ -157,8 +164,10 @@ abstract class BaseMultiSelectConditionRule extends BaseConditionRule
         }
 
         return match ($this->operator) {
-            self::OPERATOR_IN => !empty(array_intersect($value, $this->_values)),
-            self::OPERATOR_NOT_IN => empty(array_intersect($value, $this->_values)),
+            self::OPERATOR_EMPTY => empty($value),
+            self::OPERATOR_NOT_EMPTY => !empty($value),
+            self::OPERATOR_IN => !$this->_values || !empty(array_intersect($value, $this->_values)),
+            self::OPERATOR_NOT_IN => !$this->_values || empty(array_intersect($value, $this->_values)),
             default => throw new InvalidConfigException("Invalid operator: $this->operator"),
         };
     }

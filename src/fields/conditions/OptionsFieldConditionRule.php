@@ -53,7 +53,7 @@ class OptionsFieldConditionRule extends BaseMultiSelectConditionRule implements 
     /**
      * @inheritdoc
      */
-    protected function elementQueryParam(): ?array
+    protected function elementQueryParam(): mixed
     {
         if (!$this->field() instanceof BaseOptionsField) {
             return null;
