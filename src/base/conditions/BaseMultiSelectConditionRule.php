@@ -27,6 +27,11 @@ abstract class BaseMultiSelectConditionRule extends BaseConditionRule
     private array $_values = [];
 
     /**
+     * @inheritdoc
+     */
+    protected bool $reloadOnOperatorChange = true;
+
+    /**
      * Returns the operators that should be allowed for this rule.
      *
      * @return array
@@ -86,6 +91,11 @@ abstract class BaseMultiSelectConditionRule extends BaseConditionRule
      */
     protected function inputHtml(): string
     {
+        // don't show the value input if the condition checks for empty/notempty
+        if ($this->operator === self::OPERATOR_EMPTY || $this->operator === self::OPERATOR_NOT_EMPTY) {
+            return '';
+        }
+
         $multiSelectId = 'multiselect';
 
         return
